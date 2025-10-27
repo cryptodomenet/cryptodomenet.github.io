@@ -1,2 +1,2 @@
-This is CryptoDome.net page.
+This is CryptoDome.net page
 
