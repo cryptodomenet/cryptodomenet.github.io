@@ -161,9 +161,12 @@
                         </li>
 				-->
                     </ul>
-                    <span class="nav-item">
-                        <a class="btn-outline-sm" href="mailto:&#105;&#110;&#102;&#111;&#64;&#99;&#114;&#121;&#112;&#116;&#111;&#100;&#111;&#109;&#101;&#46;&#110;&#101;&#116;">Contact</a>
-                    </span>
+                    
+<!-- gore desno kontakt gumb      -->   
+                        <span class="nav-item">
+  <a class="btn-outline-sm" href="#" data-bs-toggle="modal" data-bs-target="#contactModal">Contact</a>
+</span>
+
                 </div> <!-- end of navbar-collapse -->
             </div> <!-- end of container -->
         </nav> <!-- end of navbar -->
@@ -595,13 +598,18 @@
                         </div> <!-- end of footer-col -->  
                    <div class="footer-col third">
 					
-                            <h6>Contact information</h6>
-                            <p class="p-small">
- 
-  <a href="mailto:&#105;&#110;&#102;&#111;&#64;&#99;&#114;&#121;&#112;&#116;&#111;&#100;&#111;&#109;&#101;&#46;&#110;&#101;&#116;">
-    &#105;&#110;&#102;&#111;&#64;&#99;&#114;&#121;&#112;&#116;&#111;&#100;&#111;&#109;&#101;&#46;&#110;&#101;&#116;
+<!-- donji kontakt email       -->   
+  <h6>Contact information</h6>                   
+  <p class="p-small">
+  <a href="#" 
+     class="footer-email-link"
+     data-bs-toggle="modal" 
+     data-bs-target="#contactModal"
+     style="text-decoration:none; color:inherit;">
+     Email contact
   </a>
 </p>
+
     <!-- WhatsApp contact -->
     <p class="p-small">
         <a href="https://wa.me/385976015495" target="_blank" rel="noopener noreferrer" style="text-decoration:none; color:inherit;">
@@ -661,6 +669,139 @@
 
 <!-- 100% privacy-first analytics -->
 <script data-collect-dnt="true" async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+
+<!-- gornji gum email kontakt skripta       -->   
+<!-- Contact Modal (replace previous contact modal/script) -->
+<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-4">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="contactModalLabel">Contact</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <p>Click below to send us an email:</p>
+
+        <!-- placeholder: email link + copy button -->
+        <p id="emailHolder" class="mb-2"></p>
+        <div id="emailControls" class="d-flex justify-content-center gap-2" style="display:none;">
+          <a id="emailLink" class="btn btn-primary" href="#" role="button" aria-label="Send email">Send email</a>
+          <button id="copyEmailBtn" class="btn btn-outline-secondary" type="button">Copy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---- CONFIG ----
+  // Encoded Base64 of reversed XORed email. (You will not see readable email here.)
+  const encodedB64 = "B1YNWxcIJEUcRxMMAAYLThVdCg==";
+
+  // Key parts (split to make trivial greps harder). They will be joined at runtime.
+  const k1 = "s3";
+  const k2 = "c";
+  const k3 = "ure";
+  const k4 = "K!";
+
+  // ---- DECODERS ----
+  function getKey() {
+    // join in slightly shuffled order then re-order - tiny trick to avoid simple grep
+    // (this is still client-side; it's obfuscation only)
+    return (k1 + k2 + k3 + k4);
+  }
+
+  function base64ToBytes(b64) {
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+
+  function xorDecode(bytes, key) {
+    const keyCodes = Array.from(key).map(c => c.charCodeAt(0));
+    const res = [];
+    for (let i = 0; i < bytes.length; i++) {
+      res.push(bytes[i] ^ keyCodes[i % keyCodes.length]);
+    }
+    return String.fromCharCode(...res);
+  }
+
+  // ---- Hook into Bootstrap modal events ----
+  document.addEventListener('DOMContentLoaded', function() {
+    const modalEl = document.getElementById('contactModal');
+    const holder = document.getElementById('emailHolder');
+    const controls = document.getElementById('emailControls');
+    const link = document.getElementById('emailLink');
+    const copyBtn = document.getElementById('copyEmailBtn');
+
+    if (!modalEl || !holder || !link || !copyBtn) return;
+
+    modalEl.addEventListener('show.bs.modal', function () {
+      try {
+        const key = getKey();
+        const bytes = base64ToBytes(encodedB64);
+        const decoded = xorDecode(bytes, key); // this returns reversed email
+        const email = decoded.split('').reverse().join(''); // reverse back
+        // set mailto & visible text
+        link.href = 'mailto:' + email;
+        link.textContent = email;
+        link.setAttribute('aria-label', 'Send email to ' + email);
+        holder.textContent = ''; // optional text
+        controls.style.display = 'flex';
+      } catch (e) {
+        // fail safe: don't reveal anything if decode fails
+        console.error('Email decode failed', e);
+        holder.textContent = 'Contact options:';
+        controls.style.display = 'none';
+      }
+    });
+
+    modalEl.addEventListener('hide.bs.modal', function () {
+      // remove email from DOM when modal closes
+      link.href = '#';
+      link.textContent = '';
+      link.removeAttribute('aria-label');
+      controls.style.display = 'none';
+      holder.textContent = '';
+    });
+
+    // copy to clipboard
+    copyBtn.addEventListener('click', function () {
+      // decode again to copy
+      try {
+        const key = getKey();
+        const bytes = base64ToBytes(encodedB64);
+        const decoded = xorDecode(bytes, key);
+        const email = decoded.split('').reverse().join('');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(email).then(function(){
+            copyBtn.textContent = 'Copied';
+            setTimeout(()=> copyBtn.textContent = 'Copy', 1500);
+          }, function(){ fallbackCopy(email); });
+        } else {
+          fallbackCopy(email);
+        }
+      } catch (e) {
+        fallbackCopy('(copy failed)');
+      }
+    });
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.textContent = 'Copy',1500); }
+      catch(e){ alert('Copy failed — please copy manually: ' + text); }
+      document.body.removeChild(ta);
+    }
+  });
+})();
+</script>
 
 </body>
 </html>
